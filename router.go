@@ -1,6 +1,7 @@
 package router
 
 import (
+	"fmt"
 	"net/http"
 	"sync"
 )
@@ -112,6 +113,11 @@ func (r *Router) AnyFunc(path string, f func(s *Session)) *Route {
 }
 
 func (r *Router) Add(methods []string, path string, handler RouteHandler) *Route {
+	//检查方法是否合法
+	if !HttpMethodsAllAllowed(methods) {
+		panic(fmt.Errorf("unsupported http method"))
+	}
+
 	route := NewRoute(methods, path, handler)
 
 	r.routeMutex.Lock()

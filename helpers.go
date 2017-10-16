@@ -14,6 +14,16 @@ func HttpMethodAllowed(m string) bool {
 	return false
 }
 
+func HttpMethodsAllAllowed(methods []string) bool {
+	for _, m := range methods {
+		if !HttpMethodAllowed(m) {
+			return false
+		}
+	}
+
+	return true
+}
+
 func RegularPath(path string) string {
 	if strings.HasSuffix(path, "/") {
 		path = string(path[:len(path)-1])

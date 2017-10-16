@@ -68,13 +68,13 @@ func (r *Route) HasMethod(m string) bool {
 }
 
 func (r *Route) match(hr *http.Request) bool {
-	//匹配path
-	if RegularPath(hr.RequestURI) != r.path {
+	//匹配方法
+	if !r.HasMethod(hr.Method) {
 		return false
 	}
 
-	//匹配方法
-	if !r.HasMethod(hr.Method) {
+	//匹配path
+	if RegularPath(hr.URL.Path) != r.path {
 		return false
 	}
 
