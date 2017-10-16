@@ -21,14 +21,12 @@ func NewRouter() *Router {
 
 func (r *Router) ServeHTTP(w http.ResponseWriter, hr *http.Request) {
 	//匹配路由
-	var route *Route
-	route = r.match(hr)
-	if route == nil {
+	var session *Session
+	session = r.match(w, hr)
+	if session == nil {
 		http.NotFoundHandler().ServeHTTP(w, hr)
 	} else {
-		session := NewSession(w, hr)
-		session.route = route
-		route.handler.Handle(session)
+		session.route.handler.Handle(session)
 	}
 }
 
@@ -133,10 +131,22 @@ func (r *Router) AddFunc(methods []string, path string, f func(s *Session)) *Rou
 	return r.Add(methods, path, handler)
 }
 
-func (r *Router) match(hr *http.Request) *Route {
+func (r *Router) match(w http.ResponseWriter, hr *http.Request) *Session {
 	for _, route := range r.routes {
-		if route.match(hr) {
-			return route
+		if !route.isRegExp {
+			if route.match(hr) {
+				session := NewSession(w, hr)
+				session.route = route
+				return session
+			}
+		} else {
+			matched, params := route.matchRegExp(hr)
+			if matched {
+				session := NewSession(w, hr)
+				session.route = route
+				session.routeParams = params
+				return session
+			}
 		}
 	}
 
