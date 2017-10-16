@@ -2,6 +2,9 @@ package router
 
 import (
 	"net/http"
+    "strings"
+    "regexp"
+    "fmt"
 )
 
 const (
@@ -30,6 +33,12 @@ var (
 	}
 )
 
+var pathRegExp *regexp.Regexp
+
+func init() {
+    pathRegExp = regexp.MustCompile(`/\{([0-9A-Za-z_]+?)(?:(\:(.*?)))?\}`)
+}
+
 type RouteHandler interface {
 	Handle(s *Session)
 }
@@ -40,21 +49,47 @@ func (h RouteFuncHandler) Handle(s *Session) {
 	h(s)
 }
 
-func NewRoute(methods []string, path string, handler RouteHandler) *Route {
-	route := new(Route)
-	route.methods = methods
-	route.path = RegularPath(path)
-	route.handler = handler
-
-	return route
-}
-
 type Route struct {
 	methods []string
 
 	path string
 
 	handler RouteHandler
+    
+    isRegExp bool  //是否是带参数路由
+    regExp *regexp.Regexp  //匹配正则表达式
+    params []string    //参数列表
+}
+
+func NewRoute(methods []string, path string, handler RouteHandler) *Route {
+	route := new(Route)
+	route.methods = methods
+	route.path = RegularPath(path)
+	route.handler = handler
+    route.isRegExp = false
+    route.regExp = nil
+    route.params = make([]string, 0)
+    
+    //是否是正则表达式路由
+    params := pathRegExp.FindAllStringSubmatch(route.path, -1)
+    if len(params) > 0 {
+        route.isRegExp = true
+        tmpRegExp := route.path
+        for _, param := range params {
+            route.params = append(route.params, param[1])
+            if param[2] == "" {
+                tmpRegExp = strings.Replace(tmpRegExp, param[0], "/([0-9A-Za-z_]+?)", 1)
+            } else if param[2] == ":" {
+                tmpRegExp = strings.Replace(tmpRegExp, param[0], "/([0-9A-Za-z_]+?)?", 1)
+            } else {
+                tmpRegExp = strings.Replace(tmpRegExp, param[0], "/(" + string(param[2][1:len(param[2])-1]) + ")", 1)
+            }
+        }
+        fmt.Println(tmpRegExp)
+        route.regExp = regexp.MustCompile(tmpRegExp)
+    }
+    fmt.Println(route.regExp, params, route)
+	return route
 }
 
 func (r *Route) HasMethod(m string) bool {

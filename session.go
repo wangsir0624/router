@@ -9,6 +9,8 @@ type Session struct {
 	Request        *http.Request
 
 	route *Route //当前请求匹配到的路由
+    
+    routeParams map[string]string  //路由参数
 }
 
 func NewSession(w http.ResponseWriter, r *http.Request) *Session {
@@ -21,4 +23,8 @@ func NewSession(w http.ResponseWriter, r *http.Request) *Session {
 
 func (s *Session) GetCurrentRoute() *Route {
 	return s.route
+}
+
+func (s *Session) GetRouteParam(key string) string {
+    return ""
 }
